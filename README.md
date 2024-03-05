@@ -1,1 +1,1 @@
-# email-detection
+In today's digital landscape, email remains a primary communication channel, making it a prime target for cyber threats such as phishing, malware, and fraudulent schemes. To mitigate these risks and protect users from potential harm, we present a Suspicious Email Detection System (SEDS), an innovative application designed to identify and flag suspicious emails in real-time.# email-detection
