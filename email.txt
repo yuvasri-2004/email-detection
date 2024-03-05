@@ -1,0 +1,75 @@
+import imaplib
+import email
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+
+# Function to fetch emails from the server
+def fetch_emails(username, password):
+    mail = imaplib.IMAP4_SSL('imap.gmail.com')
+    mail.login(username, password)
+    mail.select('inbox')
+    _, search_data = mail.search(None, 'ALL')
+    email_ids = search_data[0].split()
+
+    emails = []
+    for email_id in email_ids:
+        _, data = mail.fetch(email_id, '(RFC822)')
+        raw_email = data[0][1]
+        email_message = email.message_from_bytes(raw_email)
+        emails.append(email_message)
+    
+    mail.logout()
+    return emails
+
+# Function to preprocess emails and extract features
+def preprocess_emails(emails):
+    features = []
+    labels = []
+
+    for email in emails:
+        subject = email['subject']
+        body = ""
+
+        if email.is_multipart():
+            for part in email.walk():
+                content_type = part.get_content_type()
+                if content_type == 'text/plain':
+                    body += part.get_payload(decode=True).decode()
+        else:
+            body = email.get_payload(decode=True).decode()
+
+        features.append(subject + body)
+        # For demonstration purposes, assuming all emails with 'suspicious' in the subject are malicious
+        labels.append(1 if 'suspicious' in subject.lower() else 0)
+
+    return features, labels
+
+# Function to train a simple classifier
+def train_classifier(features, labels):
+    model = make_pipeline(CountVectorizer(), MultinomialNB())
+    model.fit(features, labels)
+    return model
+
+# Main function to fetch emails, preprocess, train model, and detect suspicious emails
+def main():
+    # Fetch emails (provide your email credentials)
+    emails = fetch_emails('your_email@gmail.com', 'your_password')
+
+    # Preprocess emails
+    features, labels = preprocess_emails(emails)
+
+    # Train classifier
+    model = train_classifier(features, labels)
+
+    # Detect suspicious emails
+    for email, label in zip(emails, model.predict(features)):
+        if label == 1:
+            print("Suspicious email detected:")
+            print("Subject:", email['subject'])
+            print("From:", email['from'])
+            print("Body:", email.get_payload())
+            print("\n")
+
+if __name__ == "__main__":
+    main()
